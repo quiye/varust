@@ -1,0 +1,8 @@
+prod:
+  environment:
+    USER: prod
+    URL: http://prod-env.com
+dev:
+  environment:
+    USER: dev
+    URL: http://dev-env.com
