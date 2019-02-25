@@ -1,8 +1,10 @@
 prod:
   environment:
     USER: prod
-    URL: http://prod-env.com
+    URL: https://prod-env.com
+    PORT: 443
 dev:
   environment:
     USER: dev
     URL: http://dev-env.com
+    PORT: 80

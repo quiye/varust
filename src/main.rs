@@ -15,45 +15,35 @@ fn main() {
     let content = std::fs::read_to_string(&args.path).expect("could not read file");
     let docs = YamlLoader::load_from_str(&content).unwrap();
     let doc = &docs[0];
-    // match doc {
-    //     Yaml::Hash(h) => {
-    //         println!("{:?}", h);
-    //         for y in h {
-    //             println!("{:?}", y);
-    //         }
-    //     }
-    //     Yaml::Boolean(b) => println!("{}", b),
-    //     _ => println!("none"),
-    // }
-    // println!("{:?}", doc.);
-    // println!("{:?}", &docs[0]);
-    // for x in &docs[0] {
-    //     println!("{:?}", x);
-    // }
     let map = search_nodes(doc, &args.root);
-    for (k,v) in map {
-        println!("{}={}",k,v);
+    for (k, v) in map {
+        println!("{}={}", k, v);
     }
 }
 
-fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, &'a str> {
+fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, String> {
     let nodes = path.split('.').collect::<Vec<&str>>();
-    fn inner_search_node<'a>(yaml: &'a yaml_rust::Yaml, pathv: Vec<&str>) -> HashMap<&'a str, &'a str> {
+    fn inner_search_node<'a>(
+        yaml: &'a yaml_rust::Yaml,
+        pathv: Vec<&str>,
+    ) -> HashMap<&'a str, String> {
         if pathv.len() == 1 {
             let &node_name = pathv.first().unwrap();
             // let Yaml::Hash(h) = yaml[node_name];
             match &yaml[node_name] {
                 Yaml::Hash(h) => {
-                    let mut map: HashMap<&str, &str> = HashMap::new();
+                    let mut map: HashMap<&str, String> = HashMap::new();
                     for (k, v) in h {
                         if let Yaml::String(ks) = k {
-                            if let Yaml::String(vs) = v {
-                                map.insert(&ks, &vs);
-                            }
+                            match v {
+                                Yaml::String(vs) => map.insert(ks, vs.to_string()),
+                                Yaml::Integer(vs) => map.insert(ks, vs.to_string()),
+                                _ => None,
+                            };
                         }
                     }
                     map
-                },
+                }
                 _ => HashMap::new(),
             }
         } else {
@@ -70,14 +60,20 @@ fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, &
 #[test]
 fn yaml_load_test() {
     let yaml = "
-    hoge:
-      HUGA: huge
-      PIYO: puyo
+    foo:
+      bar:
+        HUGA: huge
+        PIYO: puyo
+        SAZAE: 3
     ";
-    let ans: HashMap<&str, &str> = [("HUGA", "huge"), ("PIYO", "puyo")]
-        .iter()
-        .cloned()
-        .collect();
+    let ans: HashMap<&str, String> = [
+        ("HUGA", "huge".to_string()),
+        ("PIYO", "puyo".to_string()),
+        ("SAZAE", "3".to_string()),
+    ]
+    .iter()
+    .cloned()
+    .collect();
     let converted = &YamlLoader::load_from_str(yaml).unwrap()[0];
-    assert_eq!(ans, search_nodes(converted, "hoge"));
+    assert_eq!(ans, search_nodes(converted, "foo.bar"));
 }
