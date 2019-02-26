@@ -5,9 +5,11 @@ use yaml_rust::{Yaml, YamlLoader};
 
 #[derive(StructOpt)]
 struct Cli {
-    root: String,
+    node: String,
     #[structopt(parse(from_os_str))]
     path: std::path::PathBuf,
+    #[structopt(short = "o", long = "on")]
+    base_node: Option<String>,
 }
 
 fn main() {
@@ -15,8 +17,16 @@ fn main() {
     let content = std::fs::read_to_string(&args.path).expect("could not read file");
     let docs = YamlLoader::load_from_str(&content).unwrap();
     let doc = &docs[0];
-    let map = search_nodes(doc, &args.root);
+    let map = search_nodes(doc, &args.node);
+    let mut base_map = match args.base_node {
+        Some(node) => search_nodes(doc, &node),
+        None => HashMap::new(),
+    };
+
     for (k, v) in map {
+        base_map.insert(k, v);
+    }
+    for (k, v) in base_map {
         println!("{}={}", k, v);
     }
 }
@@ -29,7 +39,6 @@ fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, S
     ) -> HashMap<&'a str, String> {
         if pathv.len() == 1 {
             let &node_name = pathv.first().unwrap();
-            // let Yaml::Hash(h) = yaml[node_name];
             match &yaml[node_name] {
                 Yaml::Hash(h) => {
                     let mut map: HashMap<&str, String> = HashMap::new();

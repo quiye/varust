@@ -1,10 +1,18 @@
+# shared variables
+shared:
+  environment:
+    REPLICATION: 3
+    CONSISTENCY: ONE
+# variables for production
 prod:
   environment:
-    USER: prod
     URL: https://prod-env.com
     PORT: 443
+    REPLICATION: 5
+    CONSISTENCY: ALL
+# variables for develop
 dev:
   environment:
-    USER: dev
     URL: http://dev-env.com
     PORT: 80
+    CONSISTENCY: TWO

@@ -1,6 +1,6 @@
 [package]
 name = "varust"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Yuya Ishida <zamasu@gmail.com>"]
 edition = "2018"
 
