@@ -17,7 +17,7 @@ $ cat sample.yaml
 # shared variables
 shared:
   environment:
-    REPLICATION: 2
+    REPLICATION: 3
     CONSISTENCY: ONE
 # variables for production
 prod:
@@ -31,7 +31,7 @@ dev:
   environment:
     URL: http://dev-env.com
     PORT: 80
-    CONSISTENCY: THREE
+    CONSISTENCY: TWO
 ```
 
 From above file, we can extract productional environment variables by varust.
@@ -50,7 +50,7 @@ On the other hand, we can extract variables for develop environment.
 $ varust dev.environment sample.yaml
 PORT=80
 URL=http://dev-env.com
-CONSISTENCY=THREE
+CONSISTENCY=TWO
 ```
 
 ### Options
@@ -64,7 +64,7 @@ Look below !
 ```sh
 $ varust dev.environment --on shared.environment sample.yaml
 PORT=80
-REPLICATION=2
-CONSISTENCY=THREE
+REPLICATION=3
+CONSISTENCY=TWO
 URL=http://dev-env.com
 ```

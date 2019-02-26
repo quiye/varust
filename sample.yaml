@@ -1,7 +1,7 @@
 # shared variables
 shared:
   environment:
-    REPLICATION: 2
+    REPLICATION: 3
     CONSISTENCY: ONE
 # variables for production
 prod:
@@ -15,4 +15,4 @@ dev:
   environment:
     URL: http://dev-env.com
     PORT: 80
-    CONSISTENCY: THREE
+    CONSISTENCY: TWO
