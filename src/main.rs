@@ -10,6 +10,9 @@ struct Cli {
     path: std::path::PathBuf,
     #[structopt(short = "o", long = "on")]
     base_node: Option<String>,
+    // TODO: add help
+    #[structopt(short = "s", long = "show")]
+    show: bool,
 }
 
 fn main() {
@@ -17,6 +20,12 @@ fn main() {
     let content = std::fs::read_to_string(&args.path).expect("could not read file");
     let docs = YamlLoader::load_from_str(&content).unwrap();
     let doc = &docs[0];
+    if args.show {
+        show_nodes(doc)
+            .into_iter()
+            .for_each(move |x| println!("{}", x));
+        return;
+    }
     let map = search_nodes(doc, &args.node);
     let mut base_map = match args.base_node {
         Some(node) => search_nodes(doc, &node),
@@ -47,6 +56,7 @@ fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, S
                             match v {
                                 Yaml::String(vs) => map.insert(ks, vs.to_string()),
                                 Yaml::Integer(vs) => map.insert(ks, vs.to_string()),
+                                Yaml::Real(vs) => map.insert(ks, vs.to_string()),
                                 _ => None,
                             };
                         }
@@ -74,15 +84,63 @@ fn yaml_load_test() {
         HUGA: huge
         PIYO: puyo
         SAZAE: 3
+        PI: 3.141592
     ";
     let ans: HashMap<&str, String> = [
         ("HUGA", "huge".to_string()),
         ("PIYO", "puyo".to_string()),
         ("SAZAE", "3".to_string()),
+        ("PI", "3.141592".to_string()),
     ]
     .iter()
     .cloned()
     .collect();
     let converted = &YamlLoader::load_from_str(yaml).unwrap()[0];
     assert_eq!(ans, search_nodes(converted, "foo.bar"));
+}
+
+fn show_nodes<'a>(yaml: &'a yaml_rust::Yaml) -> Vec<String> {
+    fn inner_search_node<'a>(yaml: &'a yaml_rust::Yaml, nodes: &Vec<String>) -> Vec<String> {
+        match &yaml {
+            Yaml::Hash(h) => {
+                let mut vv: Vec<String> = Vec::new();
+                for (k, v) in h {
+                    if let Yaml::String(k) = k {
+                        vv.extend(
+                            inner_search_node(v, &nodes)
+                                .into_iter()
+                                .map(|x| k.to_string() + "." + &x),
+                        );
+                    }
+                }
+                // TODO: tailrec
+                vv
+            }
+            Yaml::String(s) => vec![s.to_string()],
+            Yaml::Integer(s) => vec![s.to_string()],
+            Yaml::Real(s) => vec![s.to_string()],
+            _ => Vec::new(),
+        }
+    }
+    inner_search_node(yaml, &Vec::new())
+}
+
+#[test]
+fn show_path_test() {
+    let yaml = "
+    foo:
+      bar:
+        HUGA: huge
+        PIYO: puyo
+        SAZAE: 3
+        PI: 3.141592
+    ";
+    let ans = vec![
+        "foo.bar.HUGA.huge".to_string(),
+        "foo.bar.PIYO.puyo".to_string(),
+        "foo.bar.SAZAE.3".to_string(),
+        "foo.bar.PI.3.141592".to_string(),
+    ];
+    let converted = &YamlLoader::load_from_str(yaml).unwrap()[0];
+    assert_eq!(ans, show_nodes(converted));
 }
