@@ -3,16 +3,18 @@ use std::collections::HashMap;
 use structopt::StructOpt;
 use yaml_rust::{Yaml, YamlLoader};
 
+/// A simple CLI tool to expand environment variables from yaml file
 #[derive(StructOpt)]
 struct Cli {
-    node: String,
     #[structopt(parse(from_os_str))]
+    /// Yaml file path
     path: std::path::PathBuf,
+    /// Parent Node of target environment variables.
+    /// If no node sets, then show all paths.
+    node: Option<String>,
+    /// Parent Node of environment variables overwritten by <node>'s
     #[structopt(short = "o", long = "on")]
     base_node: Option<String>,
-    #[structopt(short = "s", long = "show")]
-    /// Show all paths
-    show: bool,
 }
 
 fn main() {
@@ -20,23 +22,23 @@ fn main() {
     let content = std::fs::read_to_string(&args.path).expect("could not read file");
     let docs = YamlLoader::load_from_str(&content).unwrap();
     let doc = &docs[0];
-    if args.show {
+    if let Some(node) = args.node {
+        let map = search_nodes(doc, &node);
+        let mut base_map = match args.base_node {
+            Some(node) => search_nodes(doc, &node),
+            None => HashMap::new(),
+        };
+
+        for (k, v) in map {
+            base_map.insert(k, v);
+        }
+        for (k, v) in base_map {
+            println!("{}={}", k, v);
+        }
+    } else {
         show_nodes(doc)
             .into_iter()
             .for_each(move |x| println!("{}", x));
-        return;
-    }
-    let map = search_nodes(doc, &args.node);
-    let mut base_map = match args.base_node {
-        Some(node) => search_nodes(doc, &node),
-        None => HashMap::new(),
-    };
-
-    for (k, v) in map {
-        base_map.insert(k, v);
-    }
-    for (k, v) in base_map {
-        println!("{}={}", k, v);
     }
 }
 
