@@ -10,8 +10,8 @@ struct Cli {
     path: std::path::PathBuf,
     #[structopt(short = "o", long = "on")]
     base_node: Option<String>,
-    // TODO: add help
     #[structopt(short = "s", long = "show")]
+    /// Show all paths
     show: bool,
 }
 
@@ -57,6 +57,7 @@ fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, S
                                 Yaml::String(vs) => map.insert(ks, vs.to_string()),
                                 Yaml::Integer(vs) => map.insert(ks, vs.to_string()),
                                 Yaml::Real(vs) => map.insert(ks, vs.to_string()),
+                                Yaml::Boolean(vs) => map.insert(ks, vs.to_string()),
                                 _ => None,
                             };
                         }
@@ -85,12 +86,14 @@ fn yaml_load_test() {
         PIYO: puyo
         SAZAE: 3
         PI: 3.141592
+        BOOLEAN: true
     ";
     let ans: HashMap<&str, String> = [
         ("HUGA", "huge".to_string()),
         ("PIYO", "puyo".to_string()),
         ("SAZAE", "3".to_string()),
         ("PI", "3.141592".to_string()),
+        ("BOOLEAN", "true".to_string()),
     ]
     .iter()
     .cloned()
@@ -113,12 +116,13 @@ fn show_nodes<'a>(yaml: &'a yaml_rust::Yaml) -> Vec<String> {
                         );
                     }
                 }
-                // TODO: tailrec
+                // TODO: use tailrec if enable
                 vv
             }
             Yaml::String(s) => vec![s.to_string()],
             Yaml::Integer(s) => vec![s.to_string()],
             Yaml::Real(s) => vec![s.to_string()],
+            Yaml::Boolean(s) => vec![s.to_string()],
             _ => Vec::new(),
         }
     }
@@ -134,12 +138,14 @@ fn show_path_test() {
         PIYO: puyo
         SAZAE: 3
         PI: 3.141592
+        BOOLEAN: true
     ";
     let ans = vec![
         "foo.bar.HUGA.huge".to_string(),
         "foo.bar.PIYO.puyo".to_string(),
         "foo.bar.SAZAE.3".to_string(),
         "foo.bar.PI.3.141592".to_string(),
+        "foo.bar.BOOLEAN.true".to_string(),
     ];
     let converted = &YamlLoader::load_from_str(yaml).unwrap()[0];
     assert_eq!(ans, show_nodes(converted));
