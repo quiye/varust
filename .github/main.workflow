@@ -4,6 +4,6 @@ workflow "rust pr workflow" {
 }
 
 action "Rust Action" {
-  uses = "icepuma/rust-action@1.0.3"
+  uses = "icepuma/rust-action@master"
   args = "cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test"
 }
