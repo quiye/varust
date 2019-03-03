@@ -104,8 +104,8 @@ fn yaml_load_test() {
     assert_eq!(ans, search_nodes(converted, "foo.bar"));
 }
 
-fn show_nodes<'a>(yaml: &'a yaml_rust::Yaml) -> Vec<String> {
-    fn inner_search_node<'a>(yaml: &'a yaml_rust::Yaml, nodes: &Vec<String>) -> Vec<String> {
+fn show_nodes(yaml: &yaml_rust::Yaml) -> Vec<String> {
+    fn inner_search_node(yaml: &yaml_rust::Yaml, nodes: &[String]) -> Vec<String> {
         match &yaml {
             Yaml::Hash(h) => {
                 let mut vv: Vec<String> = Vec::new();
