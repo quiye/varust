@@ -3,11 +3,16 @@ use std::collections::HashMap;
 use structopt::StructOpt;
 use yaml_rust::{Yaml, YamlLoader};
 
+/// A simple CLI tool to expand environment variables from yaml file
 #[derive(StructOpt)]
 struct Cli {
-    node: String,
     #[structopt(parse(from_os_str))]
+    /// Yaml file path
     path: std::path::PathBuf,
+    /// Parent Node of target environment variables.
+    /// If no node sets, then show all paths.
+    node: Option<String>,
+    /// Parent Node of environment variables overwritten by <node>'s
     #[structopt(short = "o", long = "on")]
     base_node: Option<String>,
 }
@@ -17,17 +22,23 @@ fn main() {
     let content = std::fs::read_to_string(&args.path).expect("could not read file");
     let docs = YamlLoader::load_from_str(&content).unwrap();
     let doc = &docs[0];
-    let map = search_nodes(doc, &args.node);
-    let mut base_map = match args.base_node {
-        Some(node) => search_nodes(doc, &node),
-        None => HashMap::new(),
-    };
+    if let Some(node) = args.node {
+        let map = search_nodes(doc, &node);
+        let mut base_map = match args.base_node {
+            Some(node) => search_nodes(doc, &node),
+            None => HashMap::new(),
+        };
 
-    for (k, v) in map {
-        base_map.insert(k, v);
-    }
-    for (k, v) in base_map {
-        println!("{}={}", k, v);
+        for (k, v) in map {
+            base_map.insert(k, v);
+        }
+        for (k, v) in base_map {
+            println!("{}={}", k, v);
+        }
+    } else {
+        show_nodes(doc)
+            .into_iter()
+            .for_each(move |x| println!("{}", x));
     }
 }
 
@@ -47,6 +58,8 @@ fn search_nodes<'a>(yaml: &'a yaml_rust::Yaml, path: &str) -> HashMap<&'a str, S
                             match v {
                                 Yaml::String(vs) => map.insert(ks, vs.to_string()),
                                 Yaml::Integer(vs) => map.insert(ks, vs.to_string()),
+                                Yaml::Real(vs) => map.insert(ks, vs.to_string()),
+                                Yaml::Boolean(vs) => map.insert(ks, vs.to_string()),
                                 _ => None,
                             };
                         }
@@ -74,15 +87,68 @@ fn yaml_load_test() {
         HUGA: huge
         PIYO: puyo
         SAZAE: 3
+        PI: 3.141592
+        BOOLEAN: true
     ";
     let ans: HashMap<&str, String> = [
         ("HUGA", "huge".to_string()),
         ("PIYO", "puyo".to_string()),
         ("SAZAE", "3".to_string()),
+        ("PI", "3.141592".to_string()),
+        ("BOOLEAN", "true".to_string()),
     ]
     .iter()
     .cloned()
     .collect();
     let converted = &YamlLoader::load_from_str(yaml).unwrap()[0];
     assert_eq!(ans, search_nodes(converted, "foo.bar"));
+}
+
+fn show_nodes(yaml: &yaml_rust::Yaml) -> Vec<String> {
+    fn inner_search_node(yaml: &yaml_rust::Yaml, nodes: &[String]) -> Vec<String> {
+        match &yaml {
+            Yaml::Hash(h) => {
+                let mut vv: Vec<String> = Vec::new();
+                for (k, v) in h {
+                    if let Yaml::String(k) = k {
+                        vv.extend(
+                            inner_search_node(v, &nodes)
+                                .into_iter()
+                                .map(|x| k.to_string() + "." + &x),
+                        );
+                    }
+                }
+                // TODO: use tailrec if enable
+                vv
+            }
+            Yaml::String(s) => vec![s.to_string()],
+            Yaml::Integer(s) => vec![s.to_string()],
+            Yaml::Real(s) => vec![s.to_string()],
+            Yaml::Boolean(s) => vec![s.to_string()],
+            _ => Vec::new(),
+        }
+    }
+    inner_search_node(yaml, &Vec::new())
+}
+
+#[test]
+fn show_path_test() {
+    let yaml = "
+    foo:
+      bar:
+        HUGA: huge
+        PIYO: puyo
+        SAZAE: 3
+        PI: 3.141592
+        BOOLEAN: true
+    ";
+    let ans = vec![
+        "foo.bar.HUGA.huge".to_string(),
+        "foo.bar.PIYO.puyo".to_string(),
+        "foo.bar.SAZAE.3".to_string(),
+        "foo.bar.PI.3.141592".to_string(),
+        "foo.bar.BOOLEAN.true".to_string(),
+    ];
+    let converted = &YamlLoader::load_from_str(yaml).unwrap()[0];
+    assert_eq!(ans, show_nodes(converted));
 }

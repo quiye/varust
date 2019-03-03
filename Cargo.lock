@@ -152,7 +152,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "varust"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "structopt 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "yaml-rust 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
