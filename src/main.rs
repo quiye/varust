@@ -15,6 +15,9 @@ struct Cli {
     /// Parent Node of environment variables overwritten by <node>'s
     #[structopt(short = "o", long = "on")]
     base_node: Option<String>,
+    /// Bind variables
+    #[structopt(short = "b", long = "bind")]
+    bind: Option<String>,
 }
 
 fn main() {
@@ -30,6 +33,14 @@ fn main() {
         };
 
         for (k, v) in map {
+            if let Some(bind) = &args.bind {
+                let key = bind.split(':').collect::<Vec<&str>>()[0];
+                let val = bind.split(':').collect::<Vec<&str>>()[1];
+                if key == v {
+                    base_map.insert(k, val.to_string());
+                    continue;
+                }
+            }
             base_map.insert(k, v);
         }
         for (k, v) in base_map {
