@@ -3,6 +3,7 @@ shared:
   environment:
     REPLICATION: 3
     CONSISTENCY: ONE
+    PASSWORD: SECRET_PASS
 # variables for production
 prod:
   environment:
